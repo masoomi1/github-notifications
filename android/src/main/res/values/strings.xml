@@ -27,4 +27,13 @@
 
 <resources>
     <string name="app_name">GitHub Notifications</string>
+
+    <!-- Sign In Activity -->
+    <string name="sign_in_img_desc">GitHub Notifications logo</string>
+    <string name="sign_in_banner">@string/app_name</string>
+    <string name="sign_in_button">Sign in</string>
+    <string name="sign_in_failure_msg">Authentication process failed. Try again</string>
+
+    <!-- Main menu -->
+    <string name="sign_out">Sign out</string>
 </resources>

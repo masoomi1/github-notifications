@@ -27,8 +27,15 @@
 
 package io.alvaroorduna.githubnotifications;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+
+import io.alvaroorduna.githubnotifications.api.models.AccessToken;
+import io.alvaroorduna.githubnotifications.utils.PreferencesUtils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,5 +43,32 @@ public class MainActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        AccessToken accessToken = AccessToken.newInstance(this);
+        if (!accessToken.isValid()) requestSignIn();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.sign_out:
+                PreferencesUtils.removeAccessToken(this);
+                requestSignIn();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void requestSignIn() {
+        startActivity(new Intent(this, SignInActivity.class));
+        finish();
     }
 }
