@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onNotificationsSuccessful(List<Notification> notifications) {
         mProgressBar.setVisibility(View.GONE);
-        mRecyclerView.setAdapter(new NotificationsAdapter(notifications));
+        mRecyclerView.setAdapter(new NotificationsAdapter(this, notifications));
     }
 
     private void onNotificationsFailure() {

@@ -27,23 +27,30 @@
 
 package io.alvaroorduna.githubnotifications.adapters;
 
+import android.content.Context;
+import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.List;
 
 import io.alvaroorduna.githubnotifications.R;
+import io.alvaroorduna.githubnotifications.api.IntentsManager;
 import io.alvaroorduna.githubnotifications.api.models.Notification;
 
 
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.ViewHolder> {
 
+    private final Context context;
+
     private List<Notification> notifications;
 
-    public NotificationsAdapter(List<Notification> notifications) {
+    public NotificationsAdapter(Context context, List<Notification> notifications) {
+        this.context = context;
         this.notifications = notifications;
     }
 
@@ -57,7 +64,10 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int i) {
         Notification notification = notifications.get(i);
+        Uri uri = Uri.parse(notification.getSubject().getUrl());
 
+        viewHolder.linearLayout
+                .setOnClickListener(v -> context.startActivity(IntentsManager.checkUri(uri)));
         viewHolder.title.setText(notification.getSubject().getTitle());
         viewHolder.repo.setText(notification.getRepository().getOwner().getLogin() +
                 "/" + notification.getRepository().getName());
@@ -70,11 +80,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
+        LinearLayout linearLayout;
         TextView title;
         TextView repo;
 
         ViewHolder(View view) {
             super(view);
+            linearLayout = (LinearLayout) view.findViewById(R.id.recycler_view_item);
             title = (TextView) view.findViewById(R.id.title);
             repo = (TextView) view.findViewById(R.id.repo);
         }
