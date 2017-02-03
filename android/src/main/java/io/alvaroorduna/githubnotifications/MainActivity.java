@@ -31,13 +31,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 
 import java.util.List;
 
+import io.alvaroorduna.githubnotifications.adapters.NotificationsAdapter;
 import io.alvaroorduna.githubnotifications.api.APIError;
 import io.alvaroorduna.githubnotifications.api.ServiceGenerator;
 import io.alvaroorduna.githubnotifications.api.models.AccessToken;
@@ -54,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = LogUtils.makeLogTag(MainActivity.class);
 
     private RelativeLayout mMainLayout;
+    private RecyclerView mRecyclerView;
+    private ProgressBar mProgressBar;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,16 +70,24 @@ public class MainActivity extends AppCompatActivity {
 
         mMainLayout = (RelativeLayout) findViewById(R.id.main_layout);
 
-        if (savedInstanceState == null) {
-            AccessToken accessToken = AccessToken.newInstance(this);
-            if (!accessToken.isValid()) {
-                requestSignIn();
-            } else {
-                NotificationService notificationService =
-                        ServiceGenerator.createService(NotificationService.class, this, accessToken);
-                Call<List<Notification>> call = notificationService.getAll(true);
-                call.enqueue(new NotificationsCallback());
-            }
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        DividerItemDecoration dividerItemDecoration =
+                new DividerItemDecoration(mRecyclerView.getContext(), LinearLayoutManager.VERTICAL);
+        mRecyclerView.addItemDecoration(dividerItemDecoration);
+
+        // TODO: avoid downloading data on onConfigChange
+        AccessToken accessToken = AccessToken.newInstance(this);
+        if (!accessToken.isValid()) {
+            requestSignIn();
+        } else {
+            mProgressBar.setVisibility(View.VISIBLE);
+            NotificationService notificationService =
+                    ServiceGenerator.createService(NotificationService.class, this, accessToken);
+            Call<List<Notification>> call = notificationService.getUnread(false);
+            call.enqueue(new NotificationsCallback());
         }
     }
 
@@ -100,10 +116,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onNotificationsSuccessful(List<Notification> notifications) {
-        LogUtils.LOGV(LOG_TAG, "Notifications: #" + notifications.size());
+        mProgressBar.setVisibility(View.GONE);
+        mRecyclerView.setAdapter(new NotificationsAdapter(notifications));
     }
 
     private void onNotificationsFailure() {
+        mProgressBar.setVisibility(View.GONE);
         Snackbar.make(mMainLayout, getString(R.string.notifications_failure_msg), Snackbar.LENGTH_LONG)
                 .show();
     }
