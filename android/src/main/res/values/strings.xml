@@ -28,6 +28,9 @@
 <resources>
     <string name="app_name">GitHub Notifications</string>
 
+    <!-- Main Activity -->
+    <string name="notifications_failure_msg">There was an error fetching your notifications</string>
+
     <!-- Sign In Activity -->
     <string name="sign_in_img_desc">GitHub Notifications logo</string>
     <string name="sign_in_banner">@string/app_name</string>

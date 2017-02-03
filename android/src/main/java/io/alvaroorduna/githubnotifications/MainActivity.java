@@ -29,23 +29,50 @@ package io.alvaroorduna.githubnotifications;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.RelativeLayout;
 
+import java.util.List;
+
+import io.alvaroorduna.githubnotifications.api.APIError;
+import io.alvaroorduna.githubnotifications.api.ServiceGenerator;
 import io.alvaroorduna.githubnotifications.api.models.AccessToken;
+import io.alvaroorduna.githubnotifications.api.models.Notification;
+import io.alvaroorduna.githubnotifications.api.services.NotificationService;
+import io.alvaroorduna.githubnotifications.utils.LogUtils;
 import io.alvaroorduna.githubnotifications.utils.PreferencesUtils;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String LOG_TAG = LogUtils.makeLogTag(MainActivity.class);
+
+    private RelativeLayout mMainLayout;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        AccessToken accessToken = AccessToken.newInstance(this);
-        if (!accessToken.isValid()) requestSignIn();
+        mMainLayout = (RelativeLayout) findViewById(R.id.main_layout);
+
+        if (savedInstanceState == null) {
+            AccessToken accessToken = AccessToken.newInstance(this);
+            if (!accessToken.isValid()) {
+                requestSignIn();
+            } else {
+                NotificationService notificationService =
+                        ServiceGenerator.createService(NotificationService.class, this, accessToken);
+                Call<List<Notification>> call = notificationService.getAll(true);
+                call.enqueue(new NotificationsCallback());
+            }
+        }
     }
 
     @Override
@@ -70,5 +97,34 @@ public class MainActivity extends AppCompatActivity {
     private void requestSignIn() {
         startActivity(new Intent(this, SignInActivity.class));
         finish();
+    }
+
+    private void onNotificationsSuccessful(List<Notification> notifications) {
+        LogUtils.LOGV(LOG_TAG, "Notifications: #" + notifications.size());
+    }
+
+    private void onNotificationsFailure() {
+        Snackbar.make(mMainLayout, getString(R.string.notifications_failure_msg), Snackbar.LENGTH_LONG)
+                .show();
+    }
+
+    private class NotificationsCallback implements Callback<List<Notification>> {
+
+        @Override
+        public void onResponse(Call<List<Notification>> call, Response<List<Notification>> response) {
+            if (response.isSuccessful()) {
+                onNotificationsSuccessful(response.body());
+            } else {
+                APIError error = new APIError(response);
+                LogUtils.LOGE(LOG_TAG, "Couldn't get user notifications: " + error.toString());
+                onNotificationsFailure();
+            }
+        }
+
+        @Override
+        public void onFailure(Call<List<Notification>> call, Throwable t) {
+            LogUtils.LOGE(LOG_TAG, "Couldn't get user notifications: " + t.getMessage(), t);
+            onNotificationsFailure();
+        }
     }
 }
